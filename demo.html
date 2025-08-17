@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Countdown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;500&display=swap" rel="stylesheet">
+   
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f9c1d5 0%, #fce2ec 100%);
+            color: #5a3d5e;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        #timer {
+            text-align: center;
+            z-index: 10;
+        }
+        
+        #timer h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5rem;
+            color: #e90c7a;
+            margin-bottom: 2rem;
+        }
+        
+        .countdown-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .countdown-box {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 80px;
+        }
+        
+        .countdown-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #27ce06;
+        }
+        
+        .countdown-label {
+            font-size: 0.875rem;
+            color: #1fa1d4;
+        }
+        
+        #content {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .heart {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        #fireworks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        #birthdayPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    background: transparent;
+    padding: 2rem 3rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ec4899;
+    z-index: 200; /* upar rahe fireworks ke */
+    opacity: 0;
+    animation: popupAnim 1s ease forwards;
+}
+
+@keyframes popupAnim {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+        #musicControls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: white;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="timer">
+       <h1 class="text-6xl mb-8 animate-pulse fancy-text text-pink-300">
+    Something Special Is Coming! 🎂✨
+  </h1>
+        <div class="mb-8 text-xl text-gray-600">A beautiful surprise for your birthday on August 21st</div>
+        <div class="countdown-container mb-12">
+            <div class="countdown-box">
+                <div id="days" class="countdown-value">00</div>
+                <div class="countdown-label">Days</div>
+            </div>
+            <div class="countdown-box">
+                <div id="hours" class="countdown-value">00</div>
+                <div class="countdown-label">Hours</div>
+            </div>
+            <div class="countdown-box">
+                <div id="minutes" class="countdown-value">00</div>
+                <div class="countdown-label">Minutes</div>
+            </div>
+            <div class="countdown-box">
+                <div id="seconds" class="countdown-value">00</div>
+                <div class="countdown-label">Seconds</div>
+            </div>
+        </div>
+        <div class="text-pink-500 text-5xl heart">❤️</div>
+    </div>
+    
+    
+    <div id="content">
+        <!-- The complete birthday website will be loaded here -->
+    </div>
+    
+    <canvas id="fireworks"></canvas>
+    
+    <!-- Music Player -->
+    <audio id="birthdaySong" loop>
+        <source src="sajania.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <div id="musicControls" style="display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 000-7.072m-2.828 9.9a9 9 0 000-12.728" />
+        </svg>
+    </div>
+    
+    <script>
+        // Set the target date (August 21, 00:00 this year)
+        // Modify these values to change the date/time
+        const targetYear = new Date().getFullYear(); // Current year
+        const targetMonth = 7; // August (0-11, where 0=January)
+        const targetDay = 20; // 21st
+        const targetHour = 12; // Midnight (0-23)
+        const targetMinute = 0; // 0 minutes
+        
+        // Create the target date object
+        const countDownDate = new Date(targetYear, targetMonth, targetDay, targetHour, targetMinute, 0).getTime();
+        
+        // Audio elements
+         const birthdaySong = document.getElementById('birthdaySong');
+    const musicControls = document.getElementById('musicControls');
+
+    // Autoplay attempt
+    window.addEventListener("load", () => {
+        birthdaySong.play().catch(() => {
+            console.log("Autoplay blocked, waiting for first click...");
+        });
+    });
+
+    // If autoplay blocked, start on first click anywhere
+    document.addEventListener("click", () => {
+        if (birthdaySong.paused) {
+            birthdaySong.play();
+        }
+    }, { once: true });
+
+    // Music toggle
+    musicControls.addEventListener("click", () => {
+        if (birthdaySong.paused) {
+            birthdaySong.play();
+        } else {
+            birthdaySong.pause();
+        }
+    });
+        
+        // Set default volume (0.0 to 1.0)
+        birthdaySong.volume = 1.0; // 50% volume
+        
+        // Music toggle control
+        musicControls.addEventListener('click', () => {
+            if (birthdaySong.paused) {
+                birthdaySong.play();
+                musicControls.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 000-7.072m-2.828 9.9a9 9 0 000-12.728" />
+                    </svg>
+                `;
+            } else {
+                birthdaySong.pause();
+                musicControls.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                `;
+            }
+        });
+        
+        // Update the countdown every 1 second
+        const countdown = setInterval(function() {
+            // Get today's date and time
+            const now = new Date().getTime();
+            
+            // Find the distance between now and the countdown date
+            const distance = countDownDate - now;
+            
+            // If the countdown is finished
+            if (distance <= 0) {
+                clearInterval(countdown);
+                revealContent();
+                return;
+            }
+            
+            // Time calculations for days, hours, minutes and seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Display the result
+            document.getElementById("days").innerHTML = days.toString().padStart(2, '0');
+            document.getElementById("hours").innerHTML = hours.toString().padStart(2, '0');
+            document.getElementById("minutes").innerHTML = minutes.toString().padStart(2, '0');
+            document.getElementById("seconds").innerHTML = seconds.toString().padStart(2, '0');
+        }, 1000);
+        
+        function revealContent() {
+    // Popup banake show karwao
+    const popup = document.createElement("div");
+    popup.id = "birthdayPopup";
+    popup.innerText = "🎉❤️ Happy Birthday My Dear ❤️🎉";
+    document.body.appendChild(popup);
+
+    // Hide timer and show content
+    document.getElementById("timer").style.display = "none";
+    document.getElementById("content").style.display = "block";
+    
+    // Show music controls
+    musicControls.style.display = "block";
+    
+    // Start fireworks
+    initFireworks();
+    
+    // Try to play the birthday song (may require user interaction)
+    birthdaySong.play().catch(e => {
+        console.log("Auto-play prevented, user interaction required");
+        document.body.addEventListener('click', () => {
+            birthdaySong.play();
+        }, { once: true });
+    });
+    
+    // Load the actual birthday website content
+    loadBirthdayContent();
+    
+    // 5 sec baad popup gayab kar do
+}
+
+        
+        function loadBirthdayContent() {
+            // Here you would insert your complete birthday website HTML
+            // For this example, I'll just show a simple message
+            
+            const contentDiv = document.getElementById("content");
+            contentDiv.innerHTML = `
+                <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #f5f7fa 0%, #ffebee 100%); height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <h1 class="dance-font text-5xl text-pink-600 mb-8" style="font-family: 'Dancing Script', cursive; font-size: 4rem; margin-bottom: 2rem;">Happy Birthday!</h1>
+                    <p class="text-xl mb-8" style="font-size: 1.5rem; margin-bottom: 2rem;">The complete birthday website would appear here.</p>
+                    <p class="text-sm text-gray-500" style="font-size: 0.875rem; color: #6b7280;">(In the real implementation, this would be your full birthday website HTML)</p>
+                </div>
+            `;
+            
+            // Add some special effects
+            createHearts(100);
+        }
+        
+        function createHearts(count) {
+            for(let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.innerHTML = '❤️';
+                    heart.style.position = 'absolute';
+                    heart.style.color = '#ec4899';
+                    heart.style.fontSize = '24px';
+                    
+                    // Random position
+                    heart.style.left = Math.random() * 100 + 'vw';
+                    heart.style.top = Math.random() * 100 + 'vh';
+                    heart.style.zIndex = '10';
+                    heart.style.pointerEvents = 'none';
+                    
+                    // Random animation
+                    const duration = Math.random() * 2 + 2;
+                    heart.style.animation = `floatUp ${duration}s ease-in-out forwards`;
+                    
+                    document.body.appendChild(heart);
+                    
+                    // Remove heart after animation completes
+                    setTimeout(() => {
+                        heart.remove();
+                    }, duration * 1000);
+                }, i * 100);
+            }
+        }
+        
+        // Simple fireworks effect
+        function initFireworks() {
+            const canvas = document.getElementById('fireworks');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Firework particles
+            const particles = [];
+            
+            function Firework(x, y, targetX, targetY, color) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.color = color;
+                this.distance = Math.sqrt(Math.pow(this.targetX - this.x, 2) + Math.pow(this.targetY - this.y, 2));
+                this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+                this.speed = 2;
+                this.alive = true;
+                this.particles = [];
+                
+                for (let i = 0; i < 100; i++) {
+                    this.particles.push({
+                        x: this.targetX,
+                        y: this.targetY,
+                        vx: Math.random() * 6 - 3,
+                        vy: Math.random() * 6 - 3,
+                        alpha: 1,
+                        decay: Math.random() * 0.015 + 0.01
+                    });
+                }
+            }
+            
+            function randomColor() {
+                const colors = ['#ff0000', '#ff69b4', '#ff1493', '#ff00ff', '#ff6347', '#ff4500'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            function launchFirework() {
+                const x = Math.random() * canvas.width;
+                const y = canvas.height;
+                const targetX = Math.random() * canvas.width;
+                const targetY = Math.random() * canvas.height / 2;
+                fireworks.push(new Firework(x, y, targetX, targetY, randomColor()));
+            }
+            
+            let fireworks = [];
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                if (Math.random() < 0.03) {
+                    launchFirework();
+                }
+                
+                for (let i = 0; i < fireworks.length; i++) {
+                    const f = fireworks[i];
+                    
+                    // Update position
+                    f.x += Math.cos(f.angle) * f.speed;
+                    f.y += Math.sin(f.angle) * f.speed;
+                    
+                    const distToTarget = Math.sqrt(Math.pow(f.targetX - f.x, 2) + Math.pow(f.targetY - f.y, 2));
+                    
+                    if (distToTarget < 10) {
+                        f.alive = false;
+                    }
+                    
+                    if (!f.alive) {
+                        for (let j = 0; j < f.particles.length; j++) {
+                            const p = f.particles[j];
+                            p.x += p.vx;
+                            p.y += p.vy;
+                            p.vy += 0.05;
+                            p.alpha -= p.decay;
+                            ctx.fillStyle = `${f.color.replace(')', `, ${p.alpha})`).replace('rgb', 'rgba')}`;
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        
+                        if (f.particles.every(p => p.alpha <= 0)) {
+                            fireworks.splice(i, 1);
+                            i--;
+                        }
+                    }
+                }
+            }
+            
+            // Start the animation
+            animate();
+            
+            // Resize handler
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+        
+        // Add the floatUp animation dynamically
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes floatUp {
+                to {
+                    transform: translateY(-100vh);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
